@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Detajet e Eventit – EventEase</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="/" class="navbar-brand"><span class="logo-icon">🎉</span> EventEase</a>
+    <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+    <ul class="navbar-nav" id="nav-menu">
+      <li><a href="/">Kryefaqja</a></li>
+      <li><a href="/events.html">Eventet</a></li>
+      <li id="nav-org" class="hidden"><a href="/organizer-dashboard.html">Paneli Im</a></li>
+      <li id="nav-admin" class="hidden"><a href="/admin-dashboard.html">Admin</a></li>
+      <li id="nav-scan" class="hidden"><a href="/scan.html">Skano QR</a></li>
+    </ul>
+    <div class="navbar-actions">
+      <div id="guest-actions" class="d-flex gap-1">
+        <a href="/login.html" class="btn btn-ghost btn-sm">Hyr</a>
+        <a href="/register.html" class="btn btn-primary btn-sm">Regjistrohu</a>
+      </div>
+      <div id="user-actions" class="d-flex align-center gap-1 hidden">
+        <div class="notification-bell" onclick="window.location.href='/profili.html#njoftimet'">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 17H20L18.59 15.59C18.21 15.21 18 14.7 18 14.17V11C18 8.38 16.12 6.2 13.62 5.68V5C13.62 3.9 12.72 3 11.62 3C10.52 3 9.62 3.9 9.62 5V5.68C7.12 6.2 5.24 8.38 5.24 11V14.17C5.24 14.7 5.03 15.21 4.65 15.59L3.24 17H8.24M15 17H8.24M15 17C15 18.66 13.66 20 12 20C10.34 20 9 18.66 9 17H8.24"/></svg>
+          <span class="notification-badge hidden" id="notif-badge">0</span>
+        </div>
+        <div class="user-menu">
+          <div class="user-avatar" id="user-avatar-btn"><span id="user-initial">U</span></div>
+          <div class="dropdown-menu" id="user-dropdown">
+            <div class="dropdown-item fw-bold" id="user-name">Përdoruesi</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item" onclick="window.location.href='/profili.html'">👤 Profili Im</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item danger" id="logout-btn">🚪 Dil</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="page-content">
+  <div class="container" style="max-width:800px">
+    <div id="loading" class="text-center" style="padding:4rem">
+      <span class="spinner spinner-dark"></span>
+      <p style="margin-top:1rem;color:var(--gray-400)">Duke ngarkuar eventin...</p>
+    </div>
+    <div id="event-content" class="hidden"></div>
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>🎉 <strong>EventEase</strong> — Sistemi i Menaxhimit të Eventeve · 2025</p>
+  </div>
+</footer>
+
+<script src="/js/api.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const eventId = params.get('id');
+let eventData = null;
+let rsvpData = null;
+
+const STATUS_LABELS = { draft: 'Draft', publikuar: 'Aktiv', ne_zhvillim: 'Në Zhvillim', mbyllur: 'Mbyllur' };
+const STATUS_CLASS = { draft: 'badge-gray', publikuar: 'badge-success', ne_zhvillim: 'badge-warning', mbyllur: 'badge-gray' };
+
+async function loadEvent() {
+  if (!eventId) { window.location.href = '/events.html'; return; }
+  try {
+    eventData = await apiFetch('/events/' + eventId);
+    if (isLoggedIn()) {
+      const rsvps = await apiFetch('/rsvp/my');
+      rsvpData = rsvps.find(r => r.event_id == eventId) || null;
+    }
+    renderEvent();
+  } catch {
+    document.getElementById('loading').innerHTML = `<div class="alert alert-danger">❌ Nuk u gjet eventi.</div><a href="/events.html" class="btn btn-primary mt-2">← Kthehu</a>`;
+  }
+}
+
+function renderEvent() {
+  document.getElementById('loading').classList.add('hidden');
+  const el = document.getElementById('event-content');
+  el.classList.remove('hidden');
+
+  const spotsLeft = eventData.kapaciteti - (eventData.pjesemarres_konfirmuar || 0);
+  const user = getUser();
+
+  let rsvpSection = '';
+  if (!isLoggedIn()) {
+    rsvpSection = `
+      <div class="alert alert-info">
+        💡 <a href="/login.html"><strong>Hyni</strong></a> ose <a href="/register.html"><strong>Regjistrohu</strong></a> për t'u regjistruar në këtë event.
+      </div>`;
+  } else if (rsvpData) {
+    rsvpSection = renderRsvpStatus();
+  } else if (eventData.statusi === 'publikuar' && spotsLeft > 0) {
+    rsvpSection = `
+      <div class="card" style="margin-top:1.5rem">
+        <div class="card-body text-center">
+          <h3 style="margin-bottom:.5rem">Regjistrohuni në këtë event</h3>
+          <p class="text-muted" style="margin-bottom:1.5rem">Mbeten <strong>${spotsLeft}</strong> vende nga ${eventData.kapaciteti} total.</p>
+          <button class="btn btn-primary btn-lg" onclick="registerForEvent()">
+            🎟️ Regjistrohu Tani
+          </button>
+        </div>
+      </div>`;
+  } else if (eventData.statusi === 'publikuar' && spotsLeft <= 0) {
+    rsvpSection = `<div class="alert alert-warning">⚠️ Kapaciteti i eventit është mbushur. Nuk ka vende të lira.</div>`;
+  }
+
+  el.innerHTML = `
+    <div class="mb-2">
+      <a href="/events.html" style="color:var(--gray-500);font-size:.875rem">← Kthehu te eventet</a>
+    </div>
+    <div class="card mb-3">
+      <div style="background:linear-gradient(135deg,var(--primary),var(--secondary));height:180px;display:flex;align-items:center;justify-content:center;font-size:4rem;border-radius:var(--radius) var(--radius) 0 0">🎉</div>
+      <div class="card-body">
+        <div class="d-flex justify-between align-center mb-2" style="flex-wrap:wrap;gap:.5rem">
+          <h1 style="font-size:1.8rem;font-weight:800;color:var(--gray-900)">${eventData.titulli}</h1>
+          <span class="badge ${STATUS_CLASS[eventData.statusi]}">${STATUS_LABELS[eventData.statusi]}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin:1.5rem 0">
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <span style="font-size:1.3rem">📅</span>
+            <div><div style="font-size:.75rem;color:var(--gray-500);font-weight:600">DATA & ORA</div><div style="font-weight:600">${formatDate(eventData.data)} – ${eventData.ora}</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <span style="font-size:1.3rem">📍</span>
+            <div><div style="font-size:.75rem;color:var(--gray-500);font-weight:600">VENDNDODHJA</div><div style="font-weight:600">${eventData.vendndodhja}</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <span style="font-size:1.3rem">👤</span>
+            <div><div style="font-size:.75rem;color:var(--gray-500);font-weight:600">ORGANIZATORI</div><div style="font-weight:600">${eventData.organizatori_emri}</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <span style="font-size:1.3rem">👥</span>
+            <div><div style="font-size:.75rem;color:var(--gray-500);font-weight:600">KAPACITETI</div><div style="font-weight:600">${eventData.pjesemarres_konfirmuar}/${eventData.kapaciteti} pjesëmarrës</div></div>
+          </div>
+        </div>
+        ${eventData.pershkrimi ? `<div style="border-top:1px solid var(--gray-200);padding-top:1.5rem"><h3 style="font-weight:700;margin-bottom:.5rem">Rreth Eventit</h3><p style="color:var(--gray-600);line-height:1.7">${eventData.pershkrimi}</p></div>` : ''}
+      </div>
+    </div>
+    <div id="rsvp-section">${rsvpSection}</div>`;
+}
+
+function renderRsvpStatus() {
+  const statusConfig = {
+    ne_pritje: { icon: '⏳', label: 'Ju keni aplikuar', color: 'warning', msg: 'Ju lutemi konfirmoni pjesëmarrjen tuaj duke klikuar butonin më poshtë.' },
+    konfirmuar: { icon: '✅', label: 'Pjesëmarrja u konfirmua', color: 'success', msg: 'Keni konfirmuar pjesëmarrjen tuaj. Mund të gjeneroni kodin QR.' },
+    refuzuar: { icon: '❌', label: 'Ju keni refuzuar', color: 'danger', msg: 'Keni zgjedhur të mos merrni pjesë.' },
+    anuluar: { icon: '🚫', label: 'E anuluar', color: 'danger', msg: 'Regjistrimi juaj është anuluar.' }
+  };
+
+  const cfg = statusConfig[rsvpData.statusi] || statusConfig.ne_pritje;
+  let actions = '';
+
+  if (rsvpData.statusi === 'ne_pritje') {
+    actions = `
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem">
+        <button class="btn btn-success" onclick="updateRsvp('konfirmuar')">✅ Konfirmo Pjesëmarrjen</button>
+        <button class="btn btn-ghost" onclick="updateRsvp('refuzuar')">❌ Refuzo</button>
+      </div>`;
+  } else if (rsvpData.statusi === 'konfirmuar') {
+    actions = `
+      <div style="margin-top:1rem">
+        <button class="btn btn-primary" onclick="generateQR()" id="qr-btn">📱 Gjenero Kodin QR</button>
+        <button class="btn btn-ghost btn-sm" style="margin-left:.5rem" onclick="updateRsvp('anuluar')">Anulo regjistrimin</button>
+      </div>
+      <div id="qr-display" class="hidden"></div>`;
+  }
+
+  return `
+    <div class="card" style="margin-top:1.5rem">
+      <div class="card-header">
+        <h3 class="card-title">Statusi i Regjistrimit Tuaj</h3>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-${cfg.color}" id="rsvp-alert">
+          ${cfg.icon} <strong>${cfg.label}</strong> — ${cfg.msg}
+        </div>
+        ${actions}
+      </div>
+    </div>`;
+}
+
+async function registerForEvent() {
+  try {
+    const data = await apiFetch('/rsvp', { method: 'POST', body: JSON.stringify({ event_id: parseInt(eventId) }) });
+    rsvpData = data.rsvp;
+    showToast(data.message, 'success');
+    document.getElementById('rsvp-section').innerHTML = renderRsvpStatus();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function updateRsvp(statusi) {
+  try {
+    const data = await apiFetch(`/rsvp/${rsvpData.id}`, { method: 'PUT', body: JSON.stringify({ statusi }) });
+    rsvpData = data.rsvp;
+    showToast(data.message, 'success');
+    document.getElementById('rsvp-section').innerHTML = renderRsvpStatus();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function generateQR() {
+  const btn = document.getElementById('qr-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Duke gjeneruar...';
+  try {
+    const data = await apiFetch('/qr/generate', { method: 'POST', body: JSON.stringify({ event_id: parseInt(eventId) }) });
+    const qrDiv = document.getElementById('qr-display');
+    qrDiv.classList.remove('hidden');
+    qrDiv.innerHTML = `
+      <div class="qr-display" style="margin-top:1.5rem;border-top:1px solid var(--gray-200)">
+        <h3 style="margin-bottom:1rem">🎟️ Kodi Juaj QR për Hyrje</h3>
+        <img src="${data.qrCode}" alt="QR Code" style="max-width:250px;border:4px solid var(--primary);border-radius:var(--radius)"/>
+        <p style="margin-top:1rem;color:var(--gray-500);font-size:.875rem">Paraqitni këtë kod në hyrje të eventit</p>
+        <p class="text-success fw-bold" style="margin-top:.5rem">✅ Statusi: ${data.statusi === 'aktiv' ? 'Aktiv' : 'I gjeneruar'}</p>
+        <button class="btn btn-ghost btn-sm mt-2" onclick="downloadQR('${data.qrCode}')">⬇️ Shkarko QR</button>
+      </div>`;
+    if (data.message) showToast(data.message, 'success');
+    btn.innerHTML = '✅ QR Gjeneruar';
+  } catch (err) {
+    showToast(err.message, 'error');
+    btn.disabled = false;
+    btn.innerHTML = '📱 Gjenero Kodin QR';
+  }
+}
+
+function downloadQR(dataUrl) {
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = `qr-event-${eventId}.png`;
+  a.click();
+}
+
+loadEvent();
+</script>
+</body>
+</html>

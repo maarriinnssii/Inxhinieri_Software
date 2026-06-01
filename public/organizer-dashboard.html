@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Paneli i Organizatorit – EventEase</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="/" class="navbar-brand"><span class="logo-icon">🎉</span> EventEase</a>
+    <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+    <ul class="navbar-nav" id="nav-menu">
+      <li><a href="/">Kryefaqja</a></li>
+      <li><a href="/events.html">Eventet</a></li>
+      <li id="nav-org" class="hidden"><a href="/organizer-dashboard.html" class="active">Paneli Im</a></li>
+      <li id="nav-admin" class="hidden"><a href="/admin-dashboard.html">Admin</a></li>
+      <li id="nav-scan" class="hidden"><a href="/scan.html">Skano QR</a></li>
+    </ul>
+    <div class="navbar-actions">
+      <div id="guest-actions" class="d-flex gap-1 hidden">
+        <a href="/login.html" class="btn btn-ghost btn-sm">Hyr</a>
+      </div>
+      <div id="user-actions" class="d-flex align-center gap-1">
+        <div class="notification-bell" onclick="window.location.href='/profili.html#njoftimet'">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 17H20L18.59 15.59C18.21 15.21 18 14.7 18 14.17V11C18 8.38 16.12 6.2 13.62 5.68V5C13.62 3.9 12.72 3 11.62 3C10.52 3 9.62 3.9 9.62 5V5.68C7.12 6.2 5.24 8.38 5.24 11V14.17C5.24 14.7 5.03 15.21 4.65 15.59L3.24 17H8.24M15 17H8.24M15 17C15 18.66 13.66 20 12 20C10.34 20 9 18.66 9 17H8.24"/></svg>
+          <span class="notification-badge hidden" id="notif-badge">0</span>
+        </div>
+        <div class="user-menu">
+          <div class="user-avatar" id="user-avatar-btn"><span id="user-initial">O</span></div>
+          <div class="dropdown-menu" id="user-dropdown">
+            <div class="dropdown-item fw-bold" id="user-name">Organizatori</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item" onclick="window.location.href='/profili.html'">👤 Profili Im</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item danger" id="logout-btn">🚪 Dil</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-inner">
+      <h1 class="page-title">🎯 Paneli i Organizatorit</h1>
+      <button class="btn btn-primary" onclick="openModal('create-event-modal')">+ Krijo Event të Ri</button>
+    </div>
+  </div>
+</div>
+
+<div class="page-content">
+  <div class="container">
+
+    <!-- Stats -->
+    <div class="stats-grid mb-3" id="stats-grid">
+      <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value" id="stat-total">–</div><div class="stat-label">Eventet e Mia</div></div>
+      <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value" id="stat-published">–</div><div class="stat-label">Evente Aktive</div></div>
+      <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value" id="stat-participants">–</div><div class="stat-label">Pjesëmarrës Gjithsej</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('events', this)">📅 Eventet e Mia</button>
+      <button class="tab-btn" id="tab-participants-btn" onclick="switchTab('participants', this)">👥 Pjesëmarrësit</button>
+    </div>
+
+    <!-- Events Tab -->
+    <div class="tab-panel active" id="tab-events">
+      <div id="events-loading" class="text-center" style="padding:2rem"><span class="spinner spinner-dark"></span></div>
+      <div id="events-content" class="hidden"></div>
+    </div>
+
+    <!-- Participants Tab -->
+    <div class="tab-panel" id="tab-participants">
+      <div class="card">
+        <div class="card-body">
+          <p class="text-muted">Zgjidhni një event nga lista e mësipërme për të parë listën e pjesëmarrësve.</p>
+          <div class="form-group mt-2">
+            <label class="form-label">Zgjidhni Eventin</label>
+            <select id="event-selector" class="form-control form-select" onchange="loadParticipants(this.value)">
+              <option value="">-- Zgjidhni --</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div id="participants-content" class="mt-3"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE EVENT MODAL -->
+<div class="modal-overlay hidden" id="create-event-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">+ Krijo Event të Ri</h3>
+      <button class="modal-close" onclick="closeModal('create-event-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="create-event-form">
+        <div class="form-group">
+          <label class="form-label">Titulli i Eventit *</label>
+          <input type="text" id="ev-titulli" class="form-control" placeholder="p.sh. Konferenca Vjetore 2025" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Përshkrimi</label>
+          <textarea id="ev-pershkrimi" class="form-control" placeholder="Përshkruani eventin..."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Data *</label>
+            <input type="date" id="ev-data" class="form-control" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Ora *</label>
+            <input type="time" id="ev-ora" class="form-control" required/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Vendndodhja *</label>
+          <input type="text" id="ev-vendndodhja" class="form-control" placeholder="p.sh. Pallati i Kongreseve, Tiranë" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kapaciteti Maksimal</label>
+          <input type="number" id="ev-kapaciteti" class="form-control" value="100" min="1" max="10000"/>
+          <div class="form-hint">Numri maksimal i pjesëmarrësve</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Statusi</label>
+          <select id="ev-statusi" class="form-control form-select">
+            <option value="draft">Draft (jo publik)</option>
+            <option value="publikuar">Publikuar (i dukshëm)</option>
+          </select>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('create-event-modal')">Anulo</button>
+      <button class="btn btn-primary" onclick="createEvent()" id="create-btn">Krijo Eventin</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT EVENT MODAL -->
+<div class="modal-overlay hidden" id="edit-event-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">✏️ Ndrysho Eventin</h3>
+      <button class="modal-close" onclick="closeModal('edit-event-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-ev-id"/>
+      <form id="edit-event-form">
+        <div class="form-group">
+          <label class="form-label">Titulli</label>
+          <input type="text" id="edit-ev-titulli" class="form-control" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Përshkrimi</label>
+          <textarea id="edit-ev-pershkrimi" class="form-control"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Data</label>
+            <input type="date" id="edit-ev-data" class="form-control" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Ora</label>
+            <input type="time" id="edit-ev-ora" class="form-control" required/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Vendndodhja</label>
+          <input type="text" id="edit-ev-vendndodhja" class="form-control" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kapaciteti</label>
+          <input type="number" id="edit-ev-kapaciteti" class="form-control" min="1"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Statusi</label>
+          <select id="edit-ev-statusi" class="form-control form-select">
+            <option value="draft">Draft</option>
+            <option value="publikuar">Publikuar</option>
+            <option value="ne_zhvillim">Në Zhvillim</option>
+            <option value="mbyllur">Mbyllur</option>
+          </select>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('edit-event-modal')">Anulo</button>
+      <button class="btn btn-primary" onclick="updateEvent()">Ruaj Ndryshimet</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="container"><p>🎉 <strong>EventEase</strong> · 2025</p></div>
+</footer>
+
+<script src="/js/api.js"></script>
+<script>
+if (!requireAuth()) {}
+if (!requireRole(['organizator', 'admin'])) {}
+
+let myEvents = [];
+const STATUS_LABELS = { draft: ['badge-gray', 'Draft'], publikuar: ['badge-success', 'Aktiv'], ne_zhvillim: ['badge-warning', 'Në Zhvillim'], mbyllur: ['badge-gray', 'Mbyllur'] };
+
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+async function loadMyEvents() {
+  try {
+    myEvents = await apiFetch('/events/my');
+    document.getElementById('events-loading').classList.add('hidden');
+
+    // Stats
+    document.getElementById('stat-total').textContent = myEvents.length;
+    document.getElementById('stat-published').textContent = myEvents.filter(e => e.statusi === 'publikuar').length;
+    document.getElementById('stat-participants').textContent = myEvents.reduce((s, e) => s + (e.pjesemarres_konfirmuar || 0), 0);
+
+    // Event selector
+    const sel = document.getElementById('event-selector');
+    sel.innerHTML = '<option value="">-- Zgjidhni --</option>' + myEvents.map(e => `<option value="${e.id}">${e.titulli}</option>`).join('');
+
+    const el = document.getElementById('events-content');
+    el.classList.remove('hidden');
+
+    if (myEvents.length === 0) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📅</div><h3>Nuk keni ende evente</h3><p>Krijoni eventin tuaj të parë!</p><button class="btn btn-primary mt-2" onclick="openModal('create-event-modal')">+ Krijo Event</button></div>`;
+      return;
+    }
+
+    el.innerHTML = `<div class="table-wrapper"><table>
+      <thead><tr><th>Titulli</th><th>Data & Ora</th><th>Vendndodhja</th><th>Statusi</th><th>Pjesëmarrës</th><th>Veprime</th></tr></thead>
+      <tbody>${myEvents.map(e => {
+        const [sc, sl] = STATUS_LABELS[e.statusi] || ['badge-gray', e.statusi];
+        return `<tr>
+          <td><a href="/event-detail.html?id=${e.id}" style="font-weight:600">${e.titulli}</a></td>
+          <td>${formatDate(e.data)}<br><span class="text-muted" style="font-size:.8rem">${e.ora}</span></td>
+          <td>${e.vendndodhja}</td>
+          <td><span class="badge ${sc}">${sl}</span></td>
+          <td><strong>${e.pjesemarres_konfirmuar}</strong> / ${e.kapaciteti}</td>
+          <td class="table-actions">
+            <button class="btn btn-ghost btn-sm" onclick="openEditModal(${e.id})">✏️</button>
+            <button class="btn btn-ghost btn-sm" onclick="viewParticipants(${e.id})">👥</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteEvent(${e.id})">🗑️</button>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function createEvent() {
+  const btn = document.getElementById('create-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    await apiFetch('/events', {
+      method: 'POST',
+      body: JSON.stringify({
+        titulli: document.getElementById('ev-titulli').value,
+        pershkrimi: document.getElementById('ev-pershkrimi').value,
+        data: document.getElementById('ev-data').value,
+        ora: document.getElementById('ev-ora').value,
+        vendndodhja: document.getElementById('ev-vendndodhja').value,
+        kapaciteti: parseInt(document.getElementById('ev-kapaciteti').value) || 100,
+        statusi: document.getElementById('ev-statusi').value
+      })
+    });
+    closeModal('create-event-modal');
+    document.getElementById('create-event-form').reset();
+    showToast('Eventi u krijua me sukses! 🎉', 'success');
+    loadMyEvents();
+  } catch (err) { showToast(err.message, 'error'); }
+  btn.disabled = false; btn.innerHTML = 'Krijo Eventin';
+}
+
+function openEditModal(id) {
+  const ev = myEvents.find(e => e.id === id);
+  if (!ev) return;
+  document.getElementById('edit-ev-id').value = ev.id;
+  document.getElementById('edit-ev-titulli').value = ev.titulli;
+  document.getElementById('edit-ev-pershkrimi').value = ev.pershkrimi || '';
+  document.getElementById('edit-ev-data').value = ev.data;
+  document.getElementById('edit-ev-ora').value = ev.ora;
+  document.getElementById('edit-ev-vendndodhja').value = ev.vendndodhja;
+  document.getElementById('edit-ev-kapaciteti').value = ev.kapaciteti;
+  document.getElementById('edit-ev-statusi').value = ev.statusi;
+  openModal('edit-event-modal');
+}
+
+async function updateEvent() {
+  const id = document.getElementById('edit-ev-id').value;
+  try {
+    await apiFetch('/events/' + id, {
+      method: 'PUT',
+      body: JSON.stringify({
+        titulli: document.getElementById('edit-ev-titulli').value,
+        pershkrimi: document.getElementById('edit-ev-pershkrimi').value,
+        data: document.getElementById('edit-ev-data').value,
+        ora: document.getElementById('edit-ev-ora').value,
+        vendndodhja: document.getElementById('edit-ev-vendndodhja').value,
+        kapaciteti: parseInt(document.getElementById('edit-ev-kapaciteti').value),
+        statusi: document.getElementById('edit-ev-statusi').value
+      })
+    });
+    closeModal('edit-event-modal');
+    showToast('Eventi u përditësua!', 'success');
+    loadMyEvents();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function deleteEvent(id) {
+  if (!confirm('A jeni i sigurt që doni të fshini këtë event? Të gjitha të dhënat do të fshihen.')) return;
+  try {
+    await apiFetch('/events/' + id, { method: 'DELETE' });
+    showToast('Eventi u fshi.', 'success');
+    loadMyEvents();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+function viewParticipants(id) {
+  document.querySelector('.tab-btn:nth-child(2)').click();
+  document.getElementById('event-selector').value = id;
+  loadParticipants(id);
+}
+
+async function loadParticipants(eventId) {
+  if (!eventId) return;
+  const el = document.getElementById('participants-content');
+  el.innerHTML = '<div class="text-center" style="padding:2rem"><span class="spinner spinner-dark"></span></div>';
+  try {
+    const parts = await apiFetch(`/events/${eventId}/participants`);
+    const ev = myEvents.find(e => e.id == eventId);
+    const statusMap = { ne_pritje: ['badge-warning', '⏳ Në Pritje'], konfirmuar: ['badge-success', '✅ Konfirmuar'], refuzuar: ['badge-danger', '❌ Refuzuar'], anuluar: ['badge-gray', '🚫 Anuluar'] };
+    const qrMap = { aktiv: ['badge-success', '✅ Aktiv'], perdorur: ['badge-gray', '✔️ Përdorur'], gjeneruar: ['badge-primary', '🔄'], pavlefshem: ['badge-danger', '❌'] };
+
+    if (parts.length === 0) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">👥</div><h3>Nuk ka akoma regjistrime</h3><p>Publiko eventin dhe pjesëmarrësit do të fillojnë të regjistrohen.</p></div>`;
+      return;
+    }
+
+    const confirmed = parts.filter(p => p.rsvp_statusi === 'konfirmuar').length;
+    el.innerHTML = `
+      <div class="d-flex gap-2 mb-2" style="flex-wrap:wrap">
+        <span class="badge badge-primary">👥 Total: ${parts.length}</span>
+        <span class="badge badge-success">✅ Konfirmuar: ${confirmed}</span>
+        <span class="badge badge-warning">⏳ Në pritje: ${parts.filter(p=>p.rsvp_statusi==='ne_pritje').length}</span>
+      </div>
+      <div class="table-wrapper"><table>
+        <thead><tr><th>Emri</th><th>Email</th><th>RSVP</th><th>Konfirmuar</th><th>QR Statusi</th></tr></thead>
+        <tbody>${parts.map(p => {
+          const [sc, sl] = statusMap[p.rsvp_statusi] || ['badge-gray', p.rsvp_statusi];
+          const qrInfo = p.qr_statusi ? (() => { const [qc, ql] = qrMap[p.qr_statusi] || ['badge-gray', p.qr_statusi]; return `<span class="badge ${qc}">${ql}</span>`; })() : '<span style="color:var(--gray-400)">–</span>';
+          return `<tr class="rsvp-${p.rsvp_statusi === 'konfirmuar' ? 'confirmed' : p.rsvp_statusi === 'ne_pritje' ? 'pending' : 'refused'}">
+            <td style="font-weight:600">${p.emri} ${p.mbiemri}</td>
+            <td>${p.email}</td>
+            <td><span class="badge ${sc}">${sl}</span></td>
+            <td style="font-size:.82rem">${p.koha_konfirmimit ? formatDate(p.koha_konfirmimit) : '–'}</td>
+            <td>${qrInfo}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>`;
+  } catch (err) { el.innerHTML = `<div class="alert alert-danger">❌ ${err.message}</div>`; }
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.add('hidden'); });
+});
+
+loadMyEvents();
+</script>
+</body>
+</html>

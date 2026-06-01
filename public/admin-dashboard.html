@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Paneli Admin – EventEase</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="/" class="navbar-brand"><span class="logo-icon">🎉</span> EventEase</a>
+    <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+    <ul class="navbar-nav" id="nav-menu">
+      <li><a href="/">Kryefaqja</a></li>
+      <li><a href="/events.html">Eventet</a></li>
+      <li id="nav-org" class="hidden"><a href="/organizer-dashboard.html">Paneli Im</a></li>
+      <li id="nav-admin" class="hidden"><a href="/admin-dashboard.html" class="active">Admin</a></li>
+      <li id="nav-scan" class="hidden"><a href="/scan.html">Skano QR</a></li>
+    </ul>
+    <div class="navbar-actions">
+      <div id="guest-actions" class="d-flex gap-1 hidden"></div>
+      <div id="user-actions" class="d-flex align-center gap-1">
+        <div class="user-menu">
+          <div class="user-avatar" id="user-avatar-btn"><span id="user-initial">A</span></div>
+          <div class="dropdown-menu" id="user-dropdown">
+            <div class="dropdown-item fw-bold" id="user-name">Admin</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item" onclick="window.location.href='/profili.html'">👤 Profili Im</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item danger" id="logout-btn">🚪 Dil</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-inner">
+      <h1 class="page-title">🛡️ Paneli i Administratorit</h1>
+    </div>
+  </div>
+</div>
+
+<div class="page-content">
+  <div class="container">
+
+    <!-- Stats -->
+    <div class="stats-grid mb-3">
+      <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-value" id="stat-users">–</div><div class="stat-label">Përdorues Total</div></div>
+      <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-value" id="stat-events">–</div><div class="stat-label">Evente Total</div></div>
+      <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value" id="stat-pub">–</div><div class="stat-label">Evente Aktive</div></div>
+      <div class="stat-card"><div class="stat-icon">🎫</div><div class="stat-value" id="stat-rsvp">–</div><div class="stat-label">RSVP Konfirmuar</div></div>
+      <div class="stat-card"><div class="stat-icon">📱</div><div class="stat-value" id="stat-qr">–</div><div class="stat-label">QR Gjeneruar</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('users', this)">👥 Përdoruesit</button>
+      <button class="tab-btn" onclick="switchTab('events', this)">📅 Eventet</button>
+    </div>
+
+    <!-- Users Tab -->
+    <div class="tab-panel active" id="tab-users">
+      <div class="search-bar">
+        <input type="text" id="user-search" class="form-control search-input" placeholder="🔍 Kërko përdorues..."/>
+      </div>
+      <div id="users-loading" class="text-center" style="padding:2rem"><span class="spinner spinner-dark"></span></div>
+      <div id="users-content" class="hidden"></div>
+    </div>
+
+    <!-- Events Tab -->
+    <div class="tab-panel" id="tab-events">
+      <div class="search-bar">
+        <input type="text" id="event-search" class="form-control search-input" placeholder="🔍 Kërko evente..."/>
+      </div>
+      <div id="events-loading" class="text-center hidden" style="padding:2rem"><span class="spinner spinner-dark"></span></div>
+      <div id="events-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT USER ROLE MODAL -->
+<div class="modal-overlay hidden" id="edit-user-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">✏️ Ndrysho Rolin</h3>
+      <button class="modal-close" onclick="closeModal('edit-user-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:1rem">Përdoruesi: <strong id="edit-user-name-lbl">–</strong></p>
+      <input type="hidden" id="edit-user-id"/>
+      <div class="form-group">
+        <label class="form-label">Roli i Ri</label>
+        <select id="edit-user-role" class="form-control form-select">
+          <option value="pjesemarres">👤 Pjesëmarrës</option>
+          <option value="organizator">🎯 Organizator</option>
+          <option value="staf">🔍 Staf</option>
+          <option value="admin">🛡️ Admin</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('edit-user-modal')">Anulo</button>
+      <button class="btn btn-primary" onclick="saveUserRole()">Ruaj</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="container"><p>🎉 <strong>EventEase</strong> · 2025</p></div>
+</footer>
+
+<script src="/js/api.js"></script>
+<script>
+if (!requireAuth()) {}
+if (!requireRole(['admin'])) {}
+
+let allUsers = [], allEvents = [];
+const ROLE_LABELS = { admin: ['badge-danger', '🛡️ Admin'], organizator: ['badge-primary', '🎯 Organizator'], staf: ['badge-warning', '🔍 Staf'], pjesemarres: ['badge-gray', '👤 Pjesëmarrës'] };
+const EV_STATUS = { draft: ['badge-gray', 'Draft'], publikuar: ['badge-success', 'Aktiv'], ne_zhvillim: ['badge-warning', 'Në Zhvillim'], mbyllur: ['badge-gray', 'Mbyllur'] };
+
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+async function loadStats() {
+  try {
+    const s = await apiFetch('/admin/stats');
+    document.getElementById('stat-users').textContent = s.total_users;
+    document.getElementById('stat-events').textContent = s.total_events;
+    document.getElementById('stat-pub').textContent = s.published_events;
+    document.getElementById('stat-rsvp').textContent = s.total_rsvp_confirmed;
+    document.getElementById('stat-qr').textContent = s.total_qr;
+  } catch {}
+}
+
+async function loadUsers() {
+  try {
+    allUsers = await apiFetch('/admin/users');
+    document.getElementById('users-loading').classList.add('hidden');
+    renderUsers(allUsers);
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+function renderUsers(users) {
+  const el = document.getElementById('users-content');
+  el.classList.remove('hidden');
+  if (users.length === 0) { el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">👥</div><h3>Nuk ka përdorues</h3></div>`; return; }
+  el.innerHTML = `<div class="table-wrapper"><table>
+    <thead><tr><th>Emri</th><th>Email</th><th>Roli</th><th>Regjistruar</th><th>Veprime</th></tr></thead>
+    <tbody>${users.map(u => {
+      const [sc, sl] = ROLE_LABELS[u.roli] || ['badge-gray', u.roli];
+      return `<tr>
+        <td style="font-weight:600">${u.emri} ${u.mbiemri}</td>
+        <td>${u.email}</td>
+        <td><span class="badge ${sc}">${sl}</span></td>
+        <td style="font-size:.82rem">${formatDate(u.created_at)}</td>
+        <td class="table-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openEditUser(${u.id},'${u.emri} ${u.mbiemri}','${u.roli}')">✏️ Roli</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id},'${u.emri}')">🗑️</button>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+async function loadEvents() {
+  document.getElementById('events-loading').classList.remove('hidden');
+  try {
+    allEvents = await apiFetch('/admin/events');
+    document.getElementById('events-loading').classList.add('hidden');
+    renderAdminEvents(allEvents);
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+function renderAdminEvents(events) {
+  const el = document.getElementById('events-content');
+  if (events.length === 0) { el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📅</div><h3>Nuk ka evente</h3></div>`; return; }
+  el.innerHTML = `<div class="table-wrapper"><table>
+    <thead><tr><th>Titulli</th><th>Organizatori</th><th>Data</th><th>Statusi</th><th>Pjesëmarrës</th><th>Veprim</th></tr></thead>
+    <tbody>${events.map(e => {
+      const [sc, sl] = EV_STATUS[e.statusi] || ['badge-gray', e.statusi];
+      return `<tr>
+        <td><a href="/event-detail.html?id=${e.id}" style="font-weight:600">${e.titulli}</a></td>
+        <td>${e.organizatori_emri}</td>
+        <td>${formatDate(e.data)}</td>
+        <td><span class="badge ${sc}">${sl}</span></td>
+        <td>${e.pjesemarres}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteEvent(${e.id})">🗑️</button></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+function openEditUser(id, name, currentRole) {
+  document.getElementById('edit-user-id').value = id;
+  document.getElementById('edit-user-name-lbl').textContent = name;
+  document.getElementById('edit-user-role').value = currentRole;
+  openModal('edit-user-modal');
+}
+
+async function saveUserRole() {
+  const id = document.getElementById('edit-user-id').value;
+  const roli = document.getElementById('edit-user-role').value;
+  try {
+    await apiFetch(`/admin/users/${id}`, { method: 'PUT', body: JSON.stringify({ roli }) });
+    closeModal('edit-user-modal');
+    showToast('Roli u përditësua!', 'success');
+    loadUsers(); loadStats();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function deleteUser(id, name) {
+  if (!confirm(`A jeni i sigurt që doni të fshini përdoruesin "${name}"?`)) return;
+  try {
+    await apiFetch(`/admin/users/${id}`, { method: 'DELETE' });
+    showToast('Përdoruesi u fshi.', 'success');
+    loadUsers(); loadStats();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function deleteEvent(id) {
+  if (!confirm('A jeni i sigurt? Ky veprim nuk mund të kthehet mbrapsht.')) return;
+  try {
+    await apiFetch(`/admin/events/${id}`, { method: 'DELETE' });
+    showToast('Eventi u fshi.', 'success');
+    loadEvents(); loadStats();
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'events' && !allEvents.length) loadEvents();
+}
+
+document.getElementById('user-search').addEventListener('input', function () {
+  const q = this.value.toLowerCase();
+  renderUsers(allUsers.filter(u => `${u.emri} ${u.mbiemri} ${u.email}`.toLowerCase().includes(q)));
+});
+document.getElementById('event-search').addEventListener('input', function () {
+  const q = this.value.toLowerCase();
+  renderAdminEvents(allEvents.filter(e => e.titulli.toLowerCase().includes(q)));
+});
+
+document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.add('hidden'); }));
+
+loadStats();
+loadUsers();
+</script>
+</body>
+</html>

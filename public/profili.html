@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Profili Im – EventEase</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="/" class="navbar-brand"><span class="logo-icon">🎉</span> EventEase</a>
+    <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+    <ul class="navbar-nav" id="nav-menu">
+      <li><a href="/">Kryefaqja</a></li>
+      <li><a href="/events.html">Eventet</a></li>
+      <li id="nav-org" class="hidden"><a href="/organizer-dashboard.html">Paneli Im</a></li>
+      <li id="nav-admin" class="hidden"><a href="/admin-dashboard.html">Admin</a></li>
+      <li id="nav-scan" class="hidden"><a href="/scan.html">Skano QR</a></li>
+    </ul>
+    <div class="navbar-actions">
+      <div id="guest-actions" class="d-flex gap-1">
+        <a href="/login.html" class="btn btn-ghost btn-sm">Hyr</a>
+        <a href="/register.html" class="btn btn-primary btn-sm">Regjistrohu</a>
+      </div>
+      <div id="user-actions" class="d-flex align-center gap-1 hidden">
+        <div class="notification-bell" onclick="window.location.href='/profili.html#njoftimet'">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 17H20L18.59 15.59C18.21 15.21 18 14.7 18 14.17V11C18 8.38 16.12 6.2 13.62 5.68V5C13.62 3.9 12.72 3 11.62 3C10.52 3 9.62 3.9 9.62 5V5.68C7.12 6.2 5.24 8.38 5.24 11V14.17C5.24 14.7 5.03 15.21 4.65 15.59L3.24 17H8.24M15 17H8.24M15 17C15 18.66 13.66 20 12 20C10.34 20 9 18.66 9 17H8.24"/></svg>
+          <span class="notification-badge hidden" id="notif-badge">0</span>
+        </div>
+        <div class="user-menu">
+          <div class="user-avatar" id="user-avatar-btn"><span id="user-initial">U</span></div>
+          <div class="dropdown-menu" id="user-dropdown">
+            <div class="dropdown-item fw-bold" id="user-name">Përdoruesi</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item" onclick="window.location.href='/profili.html'">👤 Profili Im</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item danger" id="logout-btn">🚪 Dil</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-inner">
+      <h1 class="page-title">👤 Profili Im</h1>
+    </div>
+  </div>
+</div>
+
+<div class="page-content">
+  <div class="container">
+    <div style="display:grid;grid-template-columns:300px 1fr;gap:1.5rem;align-items:start">
+
+      <!-- Profile Card -->
+      <div class="card" id="profile-card">
+        <div style="background:linear-gradient(135deg,var(--primary),var(--secondary));padding:2rem;text-align:center;color:#fff">
+          <div style="width:80px;height:80px;background:rgba(255,255,255,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;margin:0 auto 1rem" id="profile-initial">U</div>
+          <h2 style="font-size:1.2rem;font-weight:700" id="profile-name">...</h2>
+          <div id="profile-role-badge" style="margin-top:.5rem"></div>
+        </div>
+        <div class="card-body">
+          <p style="font-size:.875rem;color:var(--gray-500)"><strong>Email:</strong> <span id="profile-email">...</span></p>
+          <p style="font-size:.875rem;color:var(--gray-500);margin-top:.4rem"><strong>Anëtar që nga:</strong> <span id="profile-date">...</span></p>
+          <button class="btn btn-outline w-100 mt-3" onclick="toggleEditForm()">✏️ Ndrysho Profilin</button>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div>
+        <!-- Edit Form (hidden by default) -->
+        <div class="card mb-3 hidden" id="edit-form-card">
+          <div class="card-header"><h3 class="card-title">✏️ Ndrysho Profilin</h3></div>
+          <div class="card-body">
+            <form id="edit-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Emri</label>
+                  <input type="text" id="edit-emri" class="form-control" required/>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Mbiemri</label>
+                  <input type="text" id="edit-mbiemri" class="form-control" required/>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Fjalëkalim i Ri (lëreni bosh për të mbajtur të njëjtin)</label>
+                <input type="password" id="edit-password" class="form-control" placeholder="Minimumi 6 karaktere" minlength="6"/>
+              </div>
+              <div style="display:flex;gap:.5rem">
+                <button type="submit" class="btn btn-primary">Ruaj Ndryshimet</button>
+                <button type="button" class="btn btn-ghost" onclick="toggleEditForm()">Anulo</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab('rsvp', this)">🎫 Regjistrimet e Mia</button>
+          <button class="tab-btn" onclick="switchTab('qr', this)">📱 Kodet QR</button>
+          <button class="tab-btn" id="tab-notif-btn" onclick="switchTab('notif', this)">🔔 Njoftimet</button>
+        </div>
+
+        <!-- RSVP Tab -->
+        <div class="tab-panel active" id="tab-rsvp">
+          <div id="rsvp-loading" class="text-center" style="padding:2rem"><span class="spinner spinner-dark"></span></div>
+          <div id="rsvp-content" class="hidden"></div>
+        </div>
+
+        <!-- QR Tab -->
+        <div class="tab-panel" id="tab-qr">
+          <div id="qr-loading" class="text-center hidden" style="padding:2rem"><span class="spinner spinner-dark"></span></div>
+          <div id="qr-content"></div>
+        </div>
+
+        <!-- Notifications Tab -->
+        <div class="tab-panel" id="tab-notif">
+          <div id="notif-content">
+            <div class="text-center" style="padding:2rem"><span class="spinner spinner-dark"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="container"><p>🎉 <strong>EventEase</strong> · 2025</p></div>
+</footer>
+
+<script src="/js/api.js"></script>
+<script>
+if (!requireAuth()) {}
+
+const RSVP_STATUS = { ne_pritje: ['badge-warning', '⏳ Në Pritje'], konfirmuar: ['badge-success', '✅ Konfirmuar'], refuzuar: ['badge-danger', '❌ Refuzuar'], anuluar: ['badge-gray', '🚫 Anuluar'] };
+
+async function loadProfile() {
+  try {
+    const user = await apiFetch('/auth/me');
+    localStorage.setItem('user', JSON.stringify(user));
+    document.getElementById('profile-initial').textContent = (user.emri[0] + user.mbiemri[0]).toUpperCase();
+    document.getElementById('profile-name').textContent = user.emri + ' ' + user.mbiemri;
+    document.getElementById('profile-email').textContent = user.email;
+    document.getElementById('profile-date').textContent = formatDate(user.created_at);
+    const roleLabels = { admin: '🛡️ Admin', organizator: '🎯 Organizator', staf: '🔍 Staf', pjesemarres: '👤 Pjesëmarrës' };
+    document.getElementById('profile-role-badge').innerHTML = `<span class="badge badge-primary" style="background:rgba(255,255,255,.2);color:#fff">${roleLabels[user.roli] || user.roli}</span>`;
+    document.getElementById('edit-emri').value = user.emri;
+    document.getElementById('edit-mbiemri').value = user.mbiemri;
+  } catch {}
+}
+
+async function loadRsvps() {
+  try {
+    const rsvps = await apiFetch('/rsvp/my');
+    document.getElementById('rsvp-loading').classList.add('hidden');
+    const el = document.getElementById('rsvp-content');
+    el.classList.remove('hidden');
+    if (rsvps.length === 0) { el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎫</div><h3>Nuk keni regjistrime</h3><p>Shfletoni eventet dhe regjistrohuni!</p><a href="/events.html" class="btn btn-primary mt-2">Shiko Eventet</a></div>`; return; }
+    el.innerHTML = `<div class="table-wrapper"><table>
+      <thead><tr><th>Eventi</th><th>Data</th><th>Vendndodhja</th><th>RSVP</th><th>QR</th></tr></thead>
+      <tbody>${rsvps.map(r => {
+        const [sc, sl] = RSVP_STATUS[r.statusi] || ['badge-gray', r.statusi];
+        const qrStatus = r.qr_statusi ? `<span class="badge ${r.qr_statusi === 'aktiv' ? 'badge-success' : 'badge-gray'}">${r.qr_statusi}</span>` : '–';
+        return `<tr>
+          <td><a href="/event-detail.html?id=${r.event_id}" style="font-weight:600">${r.titulli}</a></td>
+          <td>${formatDate(r.data)} ${r.ora}</td>
+          <td>${r.vendndodhja}</td>
+          <td><span class="badge ${sc}">${sl}</span></td>
+          <td>${qrStatus}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+  } catch {}
+}
+
+async function loadQrCodes() {
+  document.getElementById('qr-loading').classList.remove('hidden');
+  try {
+    const qrcodes = await apiFetch('/qr/my');
+    document.getElementById('qr-loading').classList.add('hidden');
+    const el = document.getElementById('qr-content');
+    if (qrcodes.length === 0) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📱</div><h3>Nuk keni kode QR</h3><p>Konfirmoni RSVP në eventet tuaja për të gjeneruar kode QR.</p></div>`;
+      return;
+    }
+    const statusMap = { aktiv: ['badge-success', '✅ Aktiv'], perdorur: ['badge-gray', '✔️ Përdorur'], gjeneruar: ['badge-primary', '🔄 Gjeneruar'], pavlefshem: ['badge-danger', '❌ I pavlefshëm'] };
+    el.innerHTML = `<div class="table-wrapper"><table>
+      <thead><tr><th>Eventi</th><th>Data</th><th>Gjeneruar</th><th>Statusi</th><th>Veprim</th></tr></thead>
+      <tbody>${qrcodes.map(q => {
+        const [sc, sl] = statusMap[q.statusi] || ['badge-gray', q.statusi];
+        return `<tr>
+          <td><a href="/event-detail.html?id=${q.event_id}" style="font-weight:600">${q.titulli}</a></td>
+          <td>${formatDate(q.data)}</td>
+          <td>${formatDate(q.data_gjenerimit)}</td>
+          <td><span class="badge ${sc}">${sl}</span></td>
+          <td><a href="/event-detail.html?id=${q.event_id}" class="btn btn-ghost btn-sm">Shiko</a></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+  } catch {}
+}
+
+async function loadNotifications() {
+  try {
+    const notifs = await apiFetch('/notifications');
+    await apiFetch('/notifications/read-all', { method: 'PUT' });
+    const badge = document.getElementById('notif-badge');
+    if (badge) { badge.textContent = '0'; badge.classList.add('hidden'); }
+    const el = document.getElementById('notif-content');
+    if (notifs.length === 0) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔔</div><h3>Nuk ka njoftime</h3><p>Njoftimet tuaja do të shfaqen këtu.</p></div>`;
+      return;
+    }
+    const iconMap = { regjistrim: '📝', konfirmim: '✅', qr_gjeneruar: '📱' };
+    el.innerHTML = notifs.map(n => `
+      <div style="display:flex;gap:.8rem;padding:1rem;border-bottom:1px solid var(--gray-100);background:${n.lexuar ? 'var(--white)' : 'var(--primary-light)'}">
+        <span style="font-size:1.3rem;flex-shrink:0">${iconMap[n.lloji] || '🔔'}</span>
+        <div>
+          <p style="font-size:.9rem;color:var(--gray-800)">${n.teksti}</p>
+          <p style="font-size:.78rem;color:var(--gray-400);margin-top:.25rem">${formatDateTime(n.data_dergimit)}</p>
+        </div>
+      </div>`).join('');
+  } catch {}
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'qr' && !document.getElementById('qr-content').innerHTML.trim()) loadQrCodes();
+  if (name === 'notif') loadNotifications();
+}
+
+function toggleEditForm() {
+  document.getElementById('edit-form-card').classList.toggle('hidden');
+}
+
+document.getElementById('edit-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const payload = { emri: document.getElementById('edit-emri').value, mbiemri: document.getElementById('edit-mbiemri').value };
+  const pw = document.getElementById('edit-password').value;
+  if (pw) payload.fjalekalimi_ri = pw;
+  try {
+    const data = await apiFetch('/auth/profile', { method: 'PUT', body: JSON.stringify(payload) });
+    localStorage.setItem('user', JSON.stringify(data.user));
+    showToast('Profili u përditësua!', 'success');
+    toggleEditForm();
+    loadProfile();
+  } catch (err) { showToast(err.message, 'error'); }
+});
+
+// Check for hash
+if (location.hash === '#njoftimet') {
+  document.querySelectorAll('.tab-btn')[2].click();
+}
+
+loadProfile();
+loadRsvps();
+
+// Responsive profile card
+window.addEventListener('resize', () => {
+  const grid = document.querySelector('[style*="grid-template-columns:300px"]');
+  if (grid && window.innerWidth < 768) grid.style.gridTemplateColumns = '1fr';
+  else if (grid) grid.style.gridTemplateColumns = '300px 1fr';
+});
+if (window.innerWidth < 768) {
+  const grid = document.querySelector('[style*="grid-template-columns:300px"]');
+  if (grid) grid.style.gridTemplateColumns = '1fr';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EventEase – Menaxhim Eventesh</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="/" class="navbar-brand"><span class="logo-icon">🎉</span> EventEase</a>
+    <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+    <ul class="navbar-nav" id="nav-menu">
+      <li><a href="/" class="active">Kryefaqja</a></li>
+      <li><a href="/events.html">Eventet</a></li>
+      <li id="nav-org" class="hidden"><a href="/organizer-dashboard.html">Paneli Im</a></li>
+      <li id="nav-admin" class="hidden"><a href="/admin-dashboard.html">Admin</a></li>
+      <li id="nav-scan" class="hidden"><a href="/scan.html">Skano QR</a></li>
+    </ul>
+    <div class="navbar-actions">
+      <div id="guest-actions" class="d-flex gap-1">
+        <a href="/login.html" class="btn btn-ghost btn-sm">Hyr</a>
+        <a href="/register.html" class="btn btn-primary btn-sm">Regjistrohu</a>
+      </div>
+      <div id="user-actions" class="d-flex align-center gap-1 hidden">
+        <div class="notification-bell" onclick="window.location.href='/profili.html#njoftimet'">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 17H20L18.59 15.59C18.21 15.21 18 14.7 18 14.17V11C18 8.38 16.12 6.2 13.62 5.68V5C13.62 3.9 12.72 3 11.62 3C10.52 3 9.62 3.9 9.62 5V5.68C7.12 6.2 5.24 8.38 5.24 11V14.17C5.24 14.7 5.03 15.21 4.65 15.59L3.24 17H8.24M15 17H8.24M15 17C15 18.66 13.66 20 12 20C10.34 20 9 18.66 9 17H8.24"/></svg>
+          <span class="notification-badge hidden" id="notif-badge">0</span>
+        </div>
+        <div class="user-menu">
+          <div class="user-avatar" id="user-avatar-btn" title="Profili im">
+            <span id="user-initial">U</span>
+          </div>
+          <div class="dropdown-menu" id="user-dropdown">
+            <div class="dropdown-item" style="font-weight:700; color:var(--gray-900)" id="user-name">Përdoruesi</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item" onclick="window.location.href='/profili.html'">👤 Profili Im</div>
+            <div class="dropdown-item" onclick="window.location.href='/events.html'">🎫 Eventet e Mia</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item danger" id="logout-btn">🚪 Dil</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <h1>Organizoni Evente<br/>me Lehtësi</h1>
+    <p>Krijoni evente, menaxhoni regjistrimet, konfirmoni RSVP dhe gjeneroni kode QR unike për hyrje të shpejta dhe të sigurta.</p>
+    <div class="hero-actions">
+      <a href="/events.html" class="btn btn-white btn-lg">Shiko Eventet</a>
+      <a href="/register.html" class="btn btn-outline btn-lg" style="border-color:#fff;color:#fff">Regjistrohu Falas</a>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" style="background:var(--white)">
+  <div class="container">
+    <h2 style="text-align:center;font-size:2rem;font-weight:800;color:var(--gray-900)">Çfarë ofron EventEase?</h2>
+    <p style="text-align:center;color:var(--gray-500);margin-top:.5rem">Gjithçka që ju nevojitet për menaxhimin e suksesshëm të eventeve</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📅</div>
+        <h3>Krijim Eventesh</h3>
+        <p>Krijoni evente profesionale duke vendosur datën, orën, vendndodhjen dhe kapacitetin maksimal.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">✅</div>
+        <h3>Sistemi RSVP</h3>
+        <p>Pjesëmarrësit regjistrohen dhe konfirmojnë pjesëmarrjen e tyre lehtë dhe shpejt.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <h3>QR Code Unik</h3>
+        <p>Çdo pjesëmarrës i konfirmuar merr kodin e tij QR unik për hyrje të sigurtë dhe të shpejtë.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <h3>Skanim QR</h3>
+        <p>Stafi skanon kodet QR në hyrje dhe sistemi verifikon vlefshmërinë në kohë reale.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Menaxhim Lista</h3>
+        <p>Organizatorët shohin listën e plotë të pjesëmarrësve dhe statusin e RSVP të secilit.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔔</div>
+        <h3>Njoftimet</h3>
+        <p>Sistemi dërgon njoftime automatike për konfirmim RSVP, gjenerim QR dhe ndryshime eventi.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section">
+  <div class="container">
+    <h2 style="text-align:center;font-size:2rem;font-weight:800;color:var(--gray-900)">Si funksionon?</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2rem;margin-top:3rem;text-align:center">
+      <div>
+        <div style="width:60px;height:60px;background:var(--primary-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem;font-weight:800;color:var(--primary)">1</div>
+        <h3 style="font-weight:700;margin-bottom:.5rem">Regjistrohu</h3>
+        <p style="color:var(--gray-500);font-size:.9rem">Krijoni llogarinë tuaj si organizator ose pjesëmarrës.</p>
+      </div>
+      <div>
+        <div style="width:60px;height:60px;background:var(--primary-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem;font-weight:800;color:var(--primary)">2</div>
+        <h3 style="font-weight:700;margin-bottom:.5rem">Gjeni Event</h3>
+        <p style="color:var(--gray-500);font-size:.9rem">Shfletoni eventet e disponueshme dhe regjistrohuni.</p>
+      </div>
+      <div>
+        <div style="width:60px;height:60px;background:var(--primary-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem;font-weight:800;color:var(--primary)">3</div>
+        <h3 style="font-weight:700;margin-bottom:.5rem">Konfirmoni RSVP</h3>
+        <p style="color:var(--gray-500);font-size:.9rem">Konfirmoni pjesëmarrjen dhe merrni kodin tuaj QR.</p>
+      </div>
+      <div>
+        <div style="width:60px;height:60px;background:var(--primary-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem;font-weight:800;color:var(--primary)">4</div>
+        <h3 style="font-weight:700;margin-bottom:.5rem">Hyni me QR</h3>
+        <p style="color:var(--gray-500);font-size:.9rem">Paraqitni kodin QR në hyrje dhe hyni pa pritje.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section" style="background:linear-gradient(135deg,var(--primary) 0%,var(--secondary) 100%);color:#fff">
+  <div class="container" style="text-align:center">
+    <h2 style="font-size:2rem;font-weight:800;margin-bottom:1rem">Gati për të filluar?</h2>
+    <p style="opacity:.9;margin-bottom:2rem;font-size:1.1rem">Bashkohuni me EventEase dhe organizoni eventet tuaja si profesionist.</p>
+    <a href="/register.html" class="btn btn-white btn-lg">Regjistrohu Tani - Falas</a>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>🎉 <strong>EventEase</strong> — Sistemi i Menaxhimit të Eventeve</p>
+    <p style="margin-top:.5rem">Zhvilluar si projekt akademik · Tiranë, 2025</p>
+  </div>
+</footer>
+
+<script src="/js/api.js"></script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hyrja – EventEase</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+<div class="auth-page">
+  <div class="card auth-card">
+    <div class="auth-header">
+      <div class="auth-logo">🎉 EventEase</div>
+      <h1>Mirë se u kthyet!</h1>
+      <p>Hyni në llogarinë tuaj për të vazhduar</p>
+    </div>
+    <div class="auth-body">
+      <div id="alert-container"></div>
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="email">Adresa Email</label>
+          <input type="email" id="email" class="form-control" placeholder="emri@shembull.com" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Fjalëkalimi</label>
+          <input type="password" id="password" class="form-control" placeholder="••••••••" required/>
+        </div>
+        <button type="submit" class="btn btn-primary w-100" id="login-btn">
+          Hyr në Sistem
+        </button>
+      </form>
+      <p class="text-center mt-3" style="font-size:.9rem">
+        Nuk keni llogari? <a href="/register.html"><strong>Regjistrohu këtu</strong></a>
+      </p>
+      <p class="text-center mt-2" style="font-size:.8rem;color:var(--gray-400)">
+        <a href="/">← Kthehu në kryefaqe</a>
+      </p>
+    </div>
+  </div>
+</div>
+<script src="/js/api.js"></script>
+<script>
+  if (isLoggedIn()) window.location.href = '/';
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('login-btn');
+    const alertEl = document.getElementById('alert-container');
+    alertEl.innerHTML = '';
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Duke hyrë...';
+
+    try {
+      const data = await apiFetch('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: document.getElementById('email').value,
+          fjalekalimi: document.getElementById('password').value
+        })
+      });
+      setAuth(data.token, data.user);
+      showToast('Hyrja u krye me sukses! Mirë se vini! 👋', 'success');
+
+      const role = data.user.roli;
+      setTimeout(() => {
+        if (role === 'admin') window.location.href = '/admin-dashboard.html';
+        else if (role === 'organizator') window.location.href = '/organizer-dashboard.html';
+        else if (role === 'staf') window.location.href = '/scan.html';
+        else window.location.href = '/events.html';
+      }, 800);
+    } catch (err) {
+      alertEl.innerHTML = `<div class="alert alert-danger">❌ ${err.message}</div>`;
+      btn.disabled = false;
+      btn.innerHTML = 'Hyr në Sistem';
+    }
+  });
+</script>
+</body>
+</html>

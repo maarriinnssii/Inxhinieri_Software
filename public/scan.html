@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Skanim QR – EventEase</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="/" class="navbar-brand"><span class="logo-icon">🎉</span> EventEase</a>
+    <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+    <ul class="navbar-nav" id="nav-menu">
+      <li><a href="/">Kryefaqja</a></li>
+      <li><a href="/events.html">Eventet</a></li>
+      <li id="nav-org" class="hidden"><a href="/organizer-dashboard.html">Paneli Im</a></li>
+      <li id="nav-admin" class="hidden"><a href="/admin-dashboard.html">Admin</a></li>
+      <li id="nav-scan" class="hidden"><a href="/scan.html" class="active">Skano QR</a></li>
+    </ul>
+    <div class="navbar-actions">
+      <div id="guest-actions" class="d-flex gap-1 hidden"></div>
+      <div id="user-actions" class="d-flex align-center gap-1">
+        <div class="user-menu">
+          <div class="user-avatar" id="user-avatar-btn"><span id="user-initial">S</span></div>
+          <div class="dropdown-menu" id="user-dropdown">
+            <div class="dropdown-item fw-bold" id="user-name">Stafi</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item" onclick="window.location.href='/profili.html'">👤 Profili Im</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item danger" id="logout-btn">🚪 Dil</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-inner">
+      <h1 class="page-title">📱 Skanimi i Kodeve QR</h1>
+    </div>
+  </div>
+</div>
+
+<div class="page-content">
+  <div class="container" style="max-width:600px">
+
+    <!-- Scanner Card -->
+    <div class="card mb-3">
+      <div class="card-header">
+        <h3 class="card-title">Kamera për Skanim</h3>
+      </div>
+      <div class="card-body">
+        <div id="qr-reader" style="border-radius:var(--radius-sm);overflow:hidden"></div>
+        <div style="display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap">
+          <button class="btn btn-primary" id="start-btn" onclick="startScanner()">▶️ Nis Skanimin</button>
+          <button class="btn btn-ghost" id="stop-btn" onclick="stopScanner()" style="display:none">⏹️ Ndal</button>
+        </div>
+        <p class="text-muted mt-2" style="font-size:.85rem">
+          Drejtojeni kamerën drejt kodit QR të pjesëmarrësit për verifikim të menjëhershëm.
+        </p>
+      </div>
+    </div>
+
+    <!-- Manual Entry -->
+    <div class="card mb-3">
+      <div class="card-header">
+        <h3 class="card-title">Verifikim Manual</h3>
+      </div>
+      <div class="card-body">
+        <p class="text-muted mb-2" style="font-size:.875rem">Nëse skanimi nuk funksionon, futni kodin manualisht:</p>
+        <div style="display:flex;gap:.5rem">
+          <input type="text" id="manual-code" class="form-control" placeholder="Futni kodin unik QR..."/>
+          <button class="btn btn-primary" onclick="verifyManual()">Verifiko</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div class="scan-result hidden" id="result-card">
+      <div class="card" id="result-content"></div>
+    </div>
+
+    <!-- History -->
+    <div class="card mt-3">
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+        <h3 class="card-title">Historiku i Skanimeve</h3>
+        <button class="btn btn-ghost btn-sm" onclick="clearHistory()">Pastro</button>
+      </div>
+      <div id="scan-history">
+        <div class="empty-state" style="padding:2rem">
+          <div class="empty-state-icon" style="font-size:2rem">📋</div>
+          <p>Nuk ka skanime ende gjatë kësaj sesioni.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="container"><p>🎉 <strong>EventEase</strong> · 2025</p></div>
+</footer>
+
+<script src="/js/api.js"></script>
+<script>
+if (!requireAuth()) {}
+if (!requireRole(['staf', 'organizator', 'admin'])) {}
+
+let html5QrCode = null;
+let scanHistory = [];
+let isScanning = false;
+
+function startScanner() {
+  if (isScanning) return;
+  html5QrCode = new Html5Qrcode('qr-reader');
+  html5QrCode.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: { width: 250, height: 250 } },
+    (decodedText) => {
+      stopScanner();
+      handleQrResult(decodedText);
+    },
+    () => {}
+  ).then(() => {
+    isScanning = true;
+    document.getElementById('start-btn').style.display = 'none';
+    document.getElementById('stop-btn').style.display = 'inline-flex';
+  }).catch(err => {
+    showToast('Kamera nuk u aktivizua: ' + err, 'error');
+  });
+}
+
+function stopScanner() {
+  if (html5QrCode && isScanning) {
+    html5QrCode.stop().then(() => {
+      html5QrCode.clear();
+      isScanning = false;
+      document.getElementById('start-btn').style.display = 'inline-flex';
+      document.getElementById('stop-btn').style.display = 'none';
+    });
+  }
+}
+
+async function handleQrResult(text) {
+  let kodi = text;
+  try {
+    const parsed = JSON.parse(text);
+    if (parsed.kodi) kodi = parsed.kodi;
+  } catch {}
+  await verifyCode(kodi);
+}
+
+async function verifyManual() {
+  const code = document.getElementById('manual-code').value.trim();
+  if (!code) { showToast('Futni kodin QR.', 'error'); return; }
+  await verifyCode(code);
+  document.getElementById('manual-code').value = '';
+}
+
+async function verifyCode(kodi) {
+  try {
+    const data = await apiFetch('/qr/verify', {
+      method: 'POST',
+      body: JSON.stringify({ kodi_unik: kodi })
+    });
+
+    const resultCard = document.getElementById('result-card');
+    const resultContent = document.getElementById('result-content');
+    resultCard.classList.remove('hidden');
+
+    if (data.valid) {
+      resultContent.innerHTML = `
+        <div style="background:var(--success-light);padding:2rem;text-align:center;border-radius:var(--radius)">
+          <div style="font-size:4rem">✅</div>
+          <h2 style="color:var(--success);font-size:1.5rem;font-weight:800;margin:.5rem 0">${data.message}</h2>
+          <div style="background:var(--white);border-radius:var(--radius-sm);padding:1rem;margin-top:1rem;text-align:left">
+            <p style="font-weight:700;font-size:1.1rem">${data.perdorues.emri} ${data.perdorues.mbiemri}</p>
+            <p style="color:var(--gray-500);font-size:.875rem">${data.perdorues.email}</p>
+            <p style="color:var(--gray-600);font-size:.875rem;margin-top:.5rem">📅 ${data.event.titulli}</p>
+          </div>
+        </div>`;
+      addToHistory(kodi, true, `${data.perdorues.emri} ${data.perdorues.mbiemri}`, data.event.titulli);
+      playBeep(true);
+    } else {
+      resultContent.innerHTML = `
+        <div style="background:var(--danger-light);padding:2rem;text-align:center;border-radius:var(--radius)">
+          <div style="font-size:4rem">❌</div>
+          <h2 style="color:var(--danger);font-size:1.5rem;font-weight:800;margin:.5rem 0">${data.message}</h2>
+          <p style="color:var(--danger);font-size:.9rem;margin-top:.5rem">Kodi: ${kodi.substring(0,12)}...</p>
+        </div>`;
+      addToHistory(kodi, false, data.message, '');
+      playBeep(false);
+    }
+
+    setTimeout(() => resultCard.classList.add('hidden'), 8000);
+  } catch (err) {
+    showToast('Gabim gjatë verifikimit: ' + err.message, 'error');
+  }
+}
+
+function addToHistory(kodi, valid, name, event) {
+  const now = new Date().toLocaleTimeString('sq-AL');
+  scanHistory.unshift({ kodi, valid, name, event, time: now });
+  if (scanHistory.length > 20) scanHistory.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const el = document.getElementById('scan-history');
+  if (scanHistory.length === 0) {
+    el.innerHTML = `<div class="empty-state" style="padding:2rem"><p>Nuk ka skanime ende.</p></div>`;
+    return;
+  }
+  el.innerHTML = scanHistory.map(s => `
+    <div style="display:flex;align-items:center;gap:.8rem;padding:.8rem 1rem;border-bottom:1px solid var(--gray-100)">
+      <span style="font-size:1.3rem">${s.valid ? '✅' : '❌'}</span>
+      <div style="flex:1">
+        <p style="font-weight:600;font-size:.9rem;color:${s.valid ? 'var(--success)' : 'var(--danger)'}">${s.name}</p>
+        <p style="font-size:.78rem;color:var(--gray-400)">${s.event || s.name} · ${s.time}</p>
+      </div>
+      <span class="badge ${s.valid ? 'badge-success' : 'badge-danger'}">${s.valid ? 'Valid' : 'Invalid'}</span>
+    </div>`).join('');
+}
+
+function clearHistory() {
+  scanHistory = [];
+  renderHistory();
+}
+
+function playBeep(success) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = success ? 880 : 220;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    osc.start(); osc.stop(ctx.currentTime + 0.5);
+  } catch {}
+}
+
+// Manual entry on Enter key
+document.getElementById('manual-code').addEventListener('keydown', e => {
+  if (e.key === 'Enter') verifyManual();
+});
+</script>
+</body>
+</html>

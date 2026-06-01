@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Regjistrohu – EventEase</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+<div class="auth-page">
+  <div class="card auth-card" style="max-width:500px">
+    <div class="auth-header">
+      <div class="auth-logo">🎉 EventEase</div>
+      <h1>Krijoni Llogarinë</h1>
+      <p>Regjistrohu dhe filloni të organizoni ose të merrni pjesë në evente</p>
+    </div>
+    <div class="auth-body">
+      <div id="alert-container"></div>
+      <form id="register-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="emri">Emri</label>
+            <input type="text" id="emri" class="form-control" placeholder="Emri juaj" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="mbiemri">Mbiemri</label>
+            <input type="text" id="mbiemri" class="form-control" placeholder="Mbiemri juaj" required/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="email">Adresa Email</label>
+          <input type="email" id="email" class="form-control" placeholder="emri@shembull.com" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fjalekalimi">Fjalëkalimi</label>
+          <input type="password" id="fjalekalimi" class="form-control" placeholder="Minimumi 6 karaktere" required minlength="6"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fjalekalimi2">Konfirmo Fjalëkalimin</label>
+          <input type="password" id="fjalekalimi2" class="form-control" placeholder="Rifutni fjalëkalimin" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="roli">Roli Juaj</label>
+          <select id="roli" class="form-control form-select">
+            <option value="pjesemarres">👤 Pjesëmarrës – Regjistrohem në evente</option>
+            <option value="organizator">🎯 Organizator – Krijoj dhe menaxhoj evente</option>
+            <option value="staf">🔍 Staf – Verifikoj hyrjet me QR code</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary w-100" id="reg-btn">
+          Regjistrohu
+        </button>
+      </form>
+      <p class="text-center mt-3" style="font-size:.9rem">
+        Keni llogari? <a href="/login.html"><strong>Hyni këtu</strong></a>
+      </p>
+      <p class="text-center mt-2" style="font-size:.8rem;color:var(--gray-400)">
+        <a href="/">← Kthehu në kryefaqe</a>
+      </p>
+    </div>
+  </div>
+</div>
+<script src="/js/api.js"></script>
+<script>
+  if (isLoggedIn()) window.location.href = '/';
+
+  document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const alertEl = document.getElementById('alert-container');
+    const btn = document.getElementById('reg-btn');
+    alertEl.innerHTML = '';
+
+    const pass1 = document.getElementById('fjalekalimi').value;
+    const pass2 = document.getElementById('fjalekalimi2').value;
+    if (pass1 !== pass2) {
+      alertEl.innerHTML = `<div class="alert alert-danger">❌ Fjalëkalimet nuk përputhen.</div>`;
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Duke u regjistruar...';
+
+    try {
+      const data = await apiFetch('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          emri: document.getElementById('emri').value,
+          mbiemri: document.getElementById('mbiemri').value,
+          email: document.getElementById('email').value,
+          fjalekalimi: pass1,
+          roli: document.getElementById('roli').value
+        })
+      });
+      setAuth(data.token, data.user);
+      showToast('Regjistrimi u krye me sukses! Mirë se vini! 🎉', 'success');
+
+      setTimeout(() => {
+        const role = data.user.roli;
+        if (role === 'organizator') window.location.href = '/organizer-dashboard.html';
+        else if (role === 'staf') window.location.href = '/scan.html';
+        else window.location.href = '/events.html';
+      }, 800);
+    } catch (err) {
+      alertEl.innerHTML = `<div class="alert alert-danger">❌ ${err.message}</div>`;
+      btn.disabled = false;
+      btn.innerHTML = 'Regjistrohu';
+    }
+  });
+</script>
+</body>
+</html>

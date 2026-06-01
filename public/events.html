@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Eventet – EventEase</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="/" class="navbar-brand"><span class="logo-icon">🎉</span> EventEase</a>
+    <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+    <ul class="navbar-nav" id="nav-menu">
+      <li><a href="/">Kryefaqja</a></li>
+      <li><a href="/events.html" class="active">Eventet</a></li>
+      <li id="nav-org" class="hidden"><a href="/organizer-dashboard.html">Paneli Im</a></li>
+      <li id="nav-admin" class="hidden"><a href="/admin-dashboard.html">Admin</a></li>
+      <li id="nav-scan" class="hidden"><a href="/scan.html">Skano QR</a></li>
+    </ul>
+    <div class="navbar-actions">
+      <div id="guest-actions" class="d-flex gap-1">
+        <a href="/login.html" class="btn btn-ghost btn-sm">Hyr</a>
+        <a href="/register.html" class="btn btn-primary btn-sm">Regjistrohu</a>
+      </div>
+      <div id="user-actions" class="d-flex align-center gap-1 hidden">
+        <div class="notification-bell" onclick="window.location.href='/profili.html#njoftimet'">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 17H20L18.59 15.59C18.21 15.21 18 14.7 18 14.17V11C18 8.38 16.12 6.2 13.62 5.68V5C13.62 3.9 12.72 3 11.62 3C10.52 3 9.62 3.9 9.62 5V5.68C7.12 6.2 5.24 8.38 5.24 11V14.17C5.24 14.7 5.03 15.21 4.65 15.59L3.24 17H8.24M15 17H8.24M15 17C15 18.66 13.66 20 12 20C10.34 20 9 18.66 9 17H8.24"/></svg>
+          <span class="notification-badge hidden" id="notif-badge">0</span>
+        </div>
+        <div class="user-menu">
+          <div class="user-avatar" id="user-avatar-btn"><span id="user-initial">U</span></div>
+          <div class="dropdown-menu" id="user-dropdown">
+            <div class="dropdown-item fw-bold" id="user-name">Përdoruesi</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item" onclick="window.location.href='/profili.html'">👤 Profili Im</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item danger" id="logout-btn">🚪 Dil</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-inner">
+      <div>
+        <h1 class="page-title">📅 Eventet e Disponueshme</h1>
+        <p class="text-muted" style="margin-top:.25rem">Gjeni eventin që ju intereson dhe regjistrohuni</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-content">
+  <div class="container">
+    <div class="search-bar">
+      <input type="text" id="search-input" class="form-control search-input" placeholder="🔍 Kërkoni evente..."/>
+    </div>
+
+    <div id="loading" class="text-center" style="padding:3rem">
+      <span class="spinner spinner-dark"></span>
+      <p style="margin-top:1rem;color:var(--gray-400)">Duke ngarkuar eventet...</p>
+    </div>
+
+    <div class="events-grid" id="events-grid" style="display:none"></div>
+
+    <div class="empty-state hidden" id="empty-state">
+      <div class="empty-state-icon">📭</div>
+      <h3>Nuk ka evente aktive</h3>
+      <p>Momentalisht nuk ka evente të disponueshme. Kthehuni më vonë!</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <p>🎉 <strong>EventEase</strong> — Sistemi i Menaxhimit të Eventeve · 2025</p>
+  </div>
+</footer>
+
+<script src="/js/api.js"></script>
+<script>
+let allEvents = [];
+
+const EMOJIS = ['🎉', '🎸', '🎭', '🏆', '🎓', '🎤', '🌟', '🎨', '🏅', '🎪'];
+
+function statusBadge(statusi) {
+  const map = {
+    'publikuar': ['badge-success', 'Aktiv'],
+    'ne_zhvillim': ['badge-warning', 'Në Zhvillim'],
+    'mbyllur': ['badge-gray', 'Mbyllur'],
+    'draft': ['badge-gray', 'Draft']
+  };
+  const [cls, label] = map[statusi] || ['badge-gray', statusi];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function renderEvents(events) {
+  const grid = document.getElementById('events-grid');
+  const empty = document.getElementById('empty-state');
+
+  if (events.length === 0) {
+    grid.style.display = 'none';
+    empty.classList.remove('hidden');
+    return;
+  }
+
+  empty.classList.add('hidden');
+  grid.style.display = 'grid';
+  grid.innerHTML = events.map((e, i) => {
+    const spotsLeft = e.kapaciteti - (e.pjesemarres_konfirmuar || 0);
+    return `
+    <div class="card event-card" onclick="window.location.href='/event-detail.html?id=${e.id}'">
+      <div class="event-card-header">${EMOJIS[i % EMOJIS.length]}</div>
+      <div class="event-card-body">
+        <div class="event-card-title">${e.titulli}</div>
+        <div class="event-meta">
+          <div class="event-meta-item">📅 ${formatDate(e.data)} nga ora ${e.ora}</div>
+          <div class="event-meta-item">📍 ${e.vendndodhja}</div>
+          <div class="event-meta-item">👤 ${e.organizatori_emri}</div>
+        </div>
+        ${e.pershkrimi ? `<p style="font-size:.875rem;color:var(--gray-500);margin-bottom:.5rem">${e.pershkrimi.slice(0,100)}${e.pershkrimi.length > 100 ? '...' : ''}</p>` : ''}
+      </div>
+      <div class="event-card-footer">
+        ${statusBadge(e.statusi)}
+        <span style="font-size:.82rem;color:${spotsLeft > 0 ? 'var(--success)' : 'var(--danger)'}">
+          ${spotsLeft > 0 ? `🟢 ${spotsLeft} vende` : '🔴 I plotë'}
+        </span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadEvents() {
+  try {
+    allEvents = await apiFetch('/events');
+    document.getElementById('loading').style.display = 'none';
+    renderEvents(allEvents);
+  } catch (err) {
+    document.getElementById('loading').innerHTML = `<div class="alert alert-danger">❌ ${err.message}</div>`;
+  }
+}
+
+document.getElementById('search-input').addEventListener('input', function () {
+  const q = this.value.toLowerCase();
+  renderEvents(allEvents.filter(e =>
+    e.titulli.toLowerCase().includes(q) ||
+    e.vendndodhja.toLowerCase().includes(q) ||
+    (e.pershkrimi || '').toLowerCase().includes(q)
+  ));
+});
+
+loadEvents();
+</script>
+</body>
+</html>
